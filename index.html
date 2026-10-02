@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Tel Nam Định</title>
+  
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0f172a">
+  
+  <meta property="og:title" content="Tel Nam Định - Tiền ở đây">
+  <meta property="og:description" content="Nhấn vào đây để đăng nhập và bắt đầu gọi số. Chúc bạn chốt đơn thành công!">
+  <meta property="og:image" content="logo.jpg">
+  <meta property="og:url" content="https://tel-nam-dinh.pages.dev">
+  <meta name="twitter:card" content="summary_large_image">
+  
+  <link rel="icon" href="logo.jpg" type="image/jpeg">
+  <link rel="apple-touch-icon" href="logo.jpg">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes fall {
+      0% { transform: translateY(-10vh) rotate(0deg) scale(0.2); opacity: 0.8; }
+      100% { transform: translateY(110vh) rotate(360deg) scale(2.5); opacity: 0; }
+    }
+    .money-drop {
+      position: fixed;
+      top: -10%;
+      font-size: 2.5rem;
+      user-select: none;
+      pointer-events: none;
+      z-index: 10;
+      animation: fall linear forwards;
+    }
+    #view-login { position: relative; z-index: 20; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #1e293b; }
+    ::-webkit-scrollbar-thumb { background: #10b981; border-radius: 4px; }
+    
+    @keyframes glow-positive {
+      0%, 100% { box-shadow: 0 0 8px #10b981; border-color: #10b981; }
+      50% { box-shadow: 0 0 20px #34d399; border-color: #6ee7b7; }
+    }
+    .box-glow {
+      animation: glow-positive 1.2s ease-in-out infinite;
+      border: 2px dashed #10b981;
+      border-radius: 0.85rem;
+      background-color: rgba(16, 185, 129, 0.05);
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-white min-h-screen flex items-center justify-center p-4 overflow-hidden relative">
+
+  <!-- MÀN HÌNH ĐĂNG NHẬP -->
+  <div id="view-login" class="w-full max-w-md bg-slate-800 p-6 rounded-2xl shadow-2xl border border-slate-700">
+    <h2 class="text-4xl font-extrabold text-center mt-2 mb-1 text-emerald-400 tracking-wide drop-shadow-md">TEL NAM ĐỊNH</h2>
+    <p class="text-center text-yellow-300 font-bold text-lg italic mb-6">"Tiền ở đây"</p>
+    
+    <div class="space-y-5">
+      <div>
+        <label class="text-lg font-bold text-slate-300">Tài khoản</label>
+        <input type="text" id="login-user" autocapitalize="off" class="w-full mt-2 p-4 text-lg font-bold rounded-xl bg-slate-900 border border-slate-700 focus:outline-none focus:border-emerald-500">
+      </div>
+      <div>
+        <label class="text-lg font-bold text-slate-300">Mật khẩu</label>
+        <input type="password" id="login-pass" class="w-full mt-2 p-4 text-lg font-bold rounded-xl bg-slate-900 border border-slate-700 focus:outline-none focus:border-emerald-500">
+      </div>
+      <button onclick="handleLogin()" id="btn-login" class="w-full py-4 text-xl bg-emerald-500 hover:bg-emerald-600 font-extrabold rounded-xl transition duration-200 shadow-lg text-white">🔥 ĐĂNG NHẬP CHỐT ĐƠN</button>
+      <p id="login-msg" class="text-red-400 text-sm text-center font-bold mt-2"></p>
+    </div>
+  </div>
+
+  <!-- MÀN HÌNH CHỌN NHÀ MẠNG -->
+  <div id="view-carrier" class="hidden w-full max-w-md bg-slate-800 p-6 rounded-2xl shadow-xl border border-slate-700 text-center relative z-20">
+    <h2 class="text-3xl font-extrabold mb-1 text-emerald-400">TEL NAM ĐỊNH</h2>
+    <p class="text-sm text-yellow-300 font-bold italic mb-5">Tiền ở đây</p>
+    <p class="text-xs text-slate-400 mb-6">Chọn mạng SIM đang gắn trên máy đàm thoại</p>
+    <div class="grid grid-cols-2 gap-3 mb-4">
+      <button onclick="selectCarrier('vina')" class="p-4 bg-sky-600 hover:bg-sky-500 font-bold rounded-xl">Vinaphone</button>
+      <button onclick="selectCarrier('viettel')" class="p-4 bg-red-600 hover:bg-red-500 font-bold rounded-xl">Viettel</button>
+      <button onclick="selectCarrier('mobi')" class="p-4 bg-blue-600 hover:bg-blue-500 font-bold rounded-xl">Mobifone</button>
+      <button onclick="selectCarrier('vnm')" class="p-4 bg-orange-600 hover:bg-orange-500 font-bold rounded-xl">Vietnamobile</button>
+    </div>
+    <button onclick="selectCarrier('all')" class="w-full py-3 bg-slate-700 hover:bg-slate-600 font-medium rounded-xl text-slate-300">Tất cả đầu số</button>
+  </div>
+
+  <!-- MÀN HÌNH GỌI CHÍNH -->
+  <div id="view-call" class="hidden w-full max-w-md bg-slate-800 p-5 rounded-2xl shadow-xl border border-slate-700 flex flex-col space-y-4 relative z-20 max-h-[95vh]">
+    
+    <div class="flex justify-between items-center border-b border-slate-700 pb-3 flex-shrink-0">
+      <div>
+        <span class="text-xs text-slate-400">User:</span>
+        <span id="display-user" class="text-sm font-bold text-emerald-400"></span>
+        <br>
+        <button onclick="logout()" class="text-[11px] text-red-400 hover:text-red-300 underline mt-1">Đăng xuất</button>
+      </div>
+      <div class="text-right">
+        <span class="text-xs text-slate-400">Tiến độ hôm nay:</span>
+        <span id="display-count" class="text-sm font-bold text-yellow-400">0/10</span>
+      </div>
+    </div>
+
+    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 text-center space-y-2 flex-shrink-0">
+      <p id="lead-phone" class="text-3xl font-mono tracking-wider font-extrabold text-emerald-400">-----------</p>
+      <p id="lead-name" class="text-xl font-bold text-yellow-300 uppercase">Đang tìm số...</p>
+    </div>
+
+    <div class="space-y-2 flex-shrink-0">
+      <a id="btn-call" href="#" class="block w-full py-3 bg-emerald-600 hover:bg-emerald-500 font-bold text-center rounded-xl text-lg shadow-lg">
+        📞 BẤM ĐỂ GỌI
+      </a>
+      <div class="grid grid-cols-2 gap-2">
+        <button id="btn-audio-play" onclick="playAudio()" class="py-3 bg-indigo-600 hover:bg-indigo-500 font-bold rounded-xl text-sm">▶ PHÁT ÂM THANH</button>
+        <button id="btn-audio-stop" onclick="stopAudio()" class="py-3 bg-rose-600 hover:bg-rose-500 font-bold rounded-xl text-sm">⏹ NGỪNG (SPACE)</button>
+      </div>
+    </div>
+
+    <div class="pt-2 border-t border-slate-700 flex-shrink-0 relative">
+      <p id="text-nhac-nho" class="text-[10px] text-emerald-400 font-bold text-center mb-2 uppercase tracking-wide animate-pulse hidden">
+        ⚠️ Hãy chọn trạng thái để tiếp tục!
+      </p>
+      
+      <div class="flex gap-2 items-stretch mt-1">
+        <div id="action-box-positive" class="flex-1 grid grid-cols-2 gap-2 p-1 -m-1 transition-all duration-300 border-2 border-transparent rounded-xl">
+          <button onclick="submitStatus('nong')" class="py-3 bg-red-600 hover:bg-red-500 font-bold rounded-xl text-xs leading-tight shadow-[0_0_10px_rgba(220,38,38,0.5)]">🔥 NÓNG (1)<br><span class="text-[9px] font-normal">(Điền Form)</span></button>
+          <button onclick="submitStatus('am')" class="py-3 bg-amber-600 hover:bg-amber-500 font-bold rounded-xl text-xs leading-tight">🌤️ ẤM (2)<br><span class="text-[9px] font-normal">(Gọi lại)</span></button>
+        </div>
+        
+        <div class="flex-1 grid grid-cols-2 gap-2 p-1 -m-1">
+          <button onclick="submitStatus('ko')" class="py-3 bg-slate-600 hover:bg-slate-500 font-bold rounded-xl text-xs leading-tight">❌ KO (3)<br><span class="text-[9px] font-normal">(Từ chối)</span></button>
+          <button onclick="submitStatus('cam')" class="py-3 bg-slate-800 hover:bg-slate-700 font-bold rounded-xl text-xs leading-tight border border-slate-600">🚫 CẤM (4)<br><span class="text-[9px] font-normal">(Blacklist)</span></button>
+        </div>
+      </div>
+      
+      <button id="btn-retry" onclick="fetchNextLead()" class="hidden w-full mt-4 py-3 bg-blue-600 hover:bg-blue-500 font-bold rounded-xl text-sm shadow-[0_0_10px_rgba(37,99,235,0.5)] text-white">🔄 HẾT SỐ - BẤM TÌM LẠI</button>
+    </div>
+
+    <!-- DANH SÁCH KHÁCH NÓNG -->
+    <div class="mt-1 pt-2 border-t border-slate-700 flex-1 min-h-[150px] flex flex-col">
+      <h3 class="text-sm font-bold text-emerald-400 mb-2 flex items-center gap-1">🔥 TÀI SẢN KHÁCH NÓNG CỦA BẠN</h3>
+      <p class="text-[10px] text-slate-400 mb-1 italic">Bấm vào dòng để xem thông tin chi tiết</p>
+      <div class="overflow-y-auto rounded-lg border border-slate-700 bg-slate-900 flex-1">
+        <table class="w-full text-left text-[11px] sm:text-[12px] table-fixed">
+          <thead class="bg-slate-800 text-slate-300 sticky top-0 z-10 shadow">
+            <tr>
+              <th class="p-1 w-6 text-center border-b border-slate-700">STT</th>
+              <th class="p-1 border-b border-slate-700 w-auto">Tên KH</th>
+              <th class="p-1 border-b border-slate-700 w-20 sm:w-24">SĐT</th>
+              <th class="p-1 text-right border-b border-slate-700 w-10 sm:w-12">Ngày</th>
+            </tr>
+          </thead>
+          <tbody id="hot-leads-list" class="divide-y divide-slate-800">
+            <tr><td colspan="4" class="p-4 text-center text-slate-500">Đang tải dữ liệu...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- BẢNG 1: POPUP ĐIỀN/SỬA THÔNG TIN KHÁCH NÓNG -->
+  <div id="modal-nong" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
+    <div class="bg-slate-800 w-full max-w-sm p-6 rounded-2xl border border-emerald-500 shadow-2xl">
+      <h3 id="title-modal-nong" class="text-xl font-bold text-emerald-400 mb-4 flex items-center gap-2">🔥 NHẬP INFO KHÁCH NÓNG</h3>
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs text-slate-400 font-bold">Tài chính (VD: 2 tỷ)</label>
+          <input type="text" id="input-taichinh" class="w-full mt-1 p-2 bg-slate-900 rounded-lg text-white border border-slate-700 focus:border-emerald-500 focus:outline-none placeholder-slate-600">
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 font-bold">Ngày hẹn (VD: Sáng mai / 20-10)</label>
+          <input type="text" id="input-ngayhen" class="w-full mt-1 p-2 bg-slate-900 rounded-lg text-white border border-slate-700 focus:border-emerald-500 focus:outline-none placeholder-slate-600">
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 font-bold">Cần hỗ trợ gì?</label>
+          <textarea id="input-ghichu" rows="2" class="w-full mt-1 p-2 bg-slate-900 rounded-lg text-white border border-slate-700 focus:border-emerald-500 focus:outline-none placeholder-slate-600"></textarea>
+        </div>
+        <div>
+          <label class="text-xs text-emerald-400 font-bold">🤝 Chốt gặp</label>
+          <input type="text" id="input-chotgap" class="w-full mt-1 p-2 bg-slate-900 rounded-lg text-white border border-emerald-700 focus:border-emerald-500 focus:outline-none placeholder-slate-600" placeholder="VD: Khách lên VP lúc 2h chiều...">
+        </div>
+      </div>
+      <div class="flex gap-3 mt-5">
+        <button onclick="closeModalNong()" class="flex-1 py-3 bg-slate-600 hover:bg-slate-500 rounded-xl font-bold text-sm">HỦY BỎ</button>
+        <button onclick="confirmHotLead()" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-sm shadow-[0_0_10px_rgba(16,185,129,0.5)]">💾 LƯU</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BẢNG 2: POPUP HIỂN THỊ CHI TIẾT KHÁCH -->
+  <div id="modal-chitiet" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
+    <div class="bg-slate-800 w-full max-w-sm p-5 rounded-2xl border border-yellow-500 shadow-2xl relative">
+      <button onclick="closeModalChiTiet()" class="absolute top-3 right-3 w-8 h-8 bg-slate-700 rounded-full text-white hover:bg-red-500 font-bold text-lg leading-none">&times;</button>
+      <h3 class="text-lg font-bold text-yellow-300 mb-4 border-b border-slate-700 pb-2">📋 THÔNG TIN CHI TIẾT</h3>
+      <div class="overflow-hidden rounded-lg border border-slate-700 text-sm">
+        <table class="w-full text-left bg-slate-900">
+          <tbody class="divide-y divide-slate-700">
+            <tr><td class="p-2 font-bold text-slate-400 w-1/3 align-top bg-slate-800">Ngày</td><td class="p-2 text-white font-mono" id="dt-ngay"></td></tr>
+            <tr><td class="p-2 font-bold text-slate-400 align-top bg-slate-800">Tên KH</td><td class="p-2 text-yellow-300 font-bold" id="dt-ten"></td></tr>
+            <tr><td class="p-2 font-bold text-slate-400 align-top bg-slate-800">SĐT</td><td class="p-2 text-emerald-400 font-bold font-mono"><a href="#" id="dt-sdt-link" class="underline"></a></td></tr>
+            <tr><td class="p-2 font-bold text-slate-400 align-top bg-slate-800">Tài chính</td><td class="p-2 text-white" id="dt-taichinh"></td></tr>
+            <tr><td class="p-2 font-bold text-slate-400 align-top bg-slate-800">Ngày hẹn</td><td class="p-2 text-sky-300 font-bold" id="dt-ngayhen"></td></tr>
+            <tr><td class="p-2 font-bold text-slate-400 align-top bg-slate-800">Hỗ trợ</td><td class="p-2 text-white" id="dt-hotro"></td></tr>
+            <tr><td class="p-2 font-bold text-emerald-400 align-top bg-slate-800">Chốt gặp</td><td class="p-2 text-white font-bold" id="dt-chotgap"></td></tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- NÚT SỬA THÔNG TIN KHÁCH NÓNG -->
+      <button onclick="openEditModal()" class="w-full mt-4 py-3 bg-blue-600 hover:bg-blue-500 font-bold rounded-xl text-sm shadow-[0_0_10px_rgba(37,99,235,0.5)] text-white">
+        ✏️ SỬA / THÊM THÔNG TIN
+      </button>
+    </div>
+  </div>
+
+  <script>
+const API_URL='https://api-tel-nam-dinh.phamthai2010.workers.dev/';let state={'user':'','token':'','carrier':'all','currentLead':null,'audioList':[],'audio':new Audio(),'moneyInterval':null,'hotLeads':[],'isEditing':![],'editSdt':null,'viewingIndex':null},isProcessing=![];function getOrCreateDeviceId(){let E=localStorage['getItem']('telnamdinh_device_id');return!E&&(E='device_'+Math['random']()['toString'](0x24)['substr'](0x2,0x9)+'_'+Date['now'](),localStorage['setItem']('telnamdinh_device_id',E)),E;}function startMoneyRain(){const E=['📕','💳','🪙','💰'];state['moneyInterval']=setInterval(()=>{const W=document['createElement']('div');W['classList']['add']('money-drop'),W['innerText']=E[Math['floor'](Math['random']()*E['length'])],W['style']['left']=Math['random']()*0x64+'vw',W['style']['animationDuration']=Math['random']()*0x2+0x3+'s',document['body']['appendChild'](W),setTimeout(()=>W['remove'](),0x1388);},0x12c);}function stopMoneyRain(){clearInterval(state['moneyInterval']),document['querySelectorAll']('.money-drop')['forEach'](E=>E['remove']()),document['body']['classList']['remove']('overflow-hidden');}window['onload']=()=>{startMoneyRain();const E=localStorage['getItem']('telnamdinh_user'),W=localStorage['getItem']('telnamdinh_pass');E&&W&&(document['getElementById']('login-user')['value']=E,document['getElementById']('login-pass')['value']=W,setTimeout(()=>{handleLogin();},0x1f4));};function logout(){localStorage['removeItem']('telnamdinh_user'),localStorage['removeItem']('telnamdinh_pass'),location['reload']();}async function apiRequest(E){try{const W=await fetch(API_URL,{'method':'POST','headers':{'Content-Type':'text/plain;charset=utf-8'},'body':JSON['stringify'](E)}),U=await W['json']();if(U['error']==='SESSION_EXPIRED')return alert('Tài\x20khoản\x20của\x20bạn\x20đã\x20được\x20đăng\x20nhập\x20từ\x20một\x20thiết\x20bị\x20khác!'),logout(),null;return U;}catch(N){return alert('Lỗi\x20kết\x20nối\x20máy\x20chủ:\x20'+N['message']),null;}}async function handleLogin(){if(isProcessing)return;isProcessing=!![],document['getElementById']('btn-login')['disabled']=!![];const E=document['getElementById']('login-user')['value']['trim'](),W=document['getElementById']('login-pass')['value']['trim'](),U=document['getElementById']('login-msg');if(!E||!W)return isProcessing=![],document['getElementById']('btn-login')['disabled']=![],U['innerText']='Vui\x20lòng\x20nhập\x20đủ\x20thông\x20tin';U['innerText']='Đang\x20kết\x20nối...';const N=await apiRequest({'action':'login','username':E,'password':W,'device_id':getOrCreateDeviceId()});isProcessing=![],document['getElementById']('btn-login')['disabled']=![];if(N&&N['success']){localStorage['setItem']('telnamdinh_user',E),localStorage['setItem']('telnamdinh_pass',W),state['user']=N['username'],state['token']=N['token'],stopMoneyRain();if(N['audio_url'])try{const T=await fetch(N['audio_url']);state['audioList']=await T['json']();}catch(y){}document['getElementById']('view-login')['classList']['add']('hidden'),document['getElementById']('view-carrier')['classList']['remove']('hidden'),loadHotLeadsList();}else U['innerText']=N?N['message']:'Đăng\x20nhập\x20thất\x20bại',localStorage['removeItem']('telnamdinh_pass');}function selectCarrier(E){state['carrier']=E,document['getElementById']('view-carrier')['classList']['add']('hidden'),document['getElementById']('view-call')['classList']['remove']('hidden'),document['getElementById']('display-user')['innerText']=state['user'],fetchNextLead();}async function loadHotLeadsList(){const E=await apiRequest({'action':'get_hot_leads','username':state['user'],'token':state['token']}),W=document['getElementById']('hot-leads-list');if(E&&E['success']){if(E['count_today']!==undefined)document['getElementById']('display-count')['innerText']=E['count_today']+'/10';E['leads']&&E['leads']['length']>0x0?(state['hotLeads']=E['leads'],W['innerHTML']='',E['leads']['forEach']((U,N)=>{let T=String(U['sdt']||'')['trim']();if(T&&!T['startsWith']('0'))T='0'+T;let y=String(U['date']||'')['split']('/'),g=y['length']>=0x2?y[0x0]+'-'+y[0x1]:U['date'];const Q=document['createElement']('tr');Q['className']='hover:bg-slate-700\x20transition\x20duration-150\x20cursor-pointer',Q['onclick']=()=>openModalChiTiet(N),Q['innerHTML']='<td\x20class=\x22p-1\x20text-center\x20text-slate-400\x20font-mono\x20text-[10px]\x22>'+(N+0x1)+'</td>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<td\x20class=\x22p-1\x20font-bold\x20text-yellow-300\x20break-words\x20whitespace-normal\x20leading-tight\x22>'+U['ten']+'</td>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<td\x20class=\x22p-1\x20font-mono\x20text-emerald-400\x20font-bold\x20tracking-tight\x22>'+T+'</td>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<td\x20class=\x22p-1\x20text-right\x20text-slate-300\x20font-bold\x22>'+g+'</td>',W['appendChild'](Q);})):W['innerHTML']='<tr><td\x20colspan=\x224\x22\x20class=\x22p-4\x20text-center\x20text-slate-500\x20italic\x22>Chưa\x20có\x20khách\x20nóng\x20nào.\x20Cố\x20lên!</td></tr>';}}function openModalChiTiet(E){const W=state['hotLeads'][E];if(!W)return;state['viewingIndex']=E;let U=String(W['sdt']||'')['trim']();if(U&&!U['startsWith']('0'))U='0'+U;document['getElementById']('dt-ngay')['innerText']=W['date']+'\x20'+W['time'],document['getElementById']('dt-ten')['innerText']=W['ten']||'-',document['getElementById']('dt-sdt-link')['innerText']=U,document['getElementById']('dt-sdt-link')['href']='tel:'+U,document['getElementById']('dt-taichinh')['innerText']=W['tai_chinh']||'-',document['getElementById']('dt-ngayhen')['innerText']=W['ngay_hen']||'-',document['getElementById']('dt-hotro')['innerText']=W['ghi_chu']||'-',document['getElementById']('dt-chotgap')['innerText']=W['chot_gap']||'-',document['getElementById']('modal-chitiet')['classList']['remove']('hidden');}function closeModalChiTiet(){document['getElementById']('modal-chitiet')['classList']['add']('hidden'),state['viewingIndex']=null;}function openEditModal(){const E=state['hotLeads'][state['viewingIndex']];if(!E)return;closeModalChiTiet(),state['isEditing']=!![],state['editSdt']=E['sdt'],document['getElementById']('title-modal-nong')['innerText']='✏️\x20SỬA\x20THÔNG\x20TIN\x20KHÁCH',document['getElementById']('input-taichinh')['value']=E['tai_chinh']||'',document['getElementById']('input-ngayhen')['value']=E['ngay_hen']||'',document['getElementById']('input-ghichu')['value']=E['ghi_chu']||'',document['getElementById']('input-chotgap')['value']=E['chot_gap']||'',document['getElementById']('modal-nong')['classList']['remove']('hidden');}async function fetchNextLead(){if(isProcessing)return;isProcessing=!![],document['getElementById']('action-box-positive')['classList']['remove']('box-glow'),document['getElementById']('text-nhac-nho')['classList']['add']('hidden'),document['getElementById']('btn-retry')['classList']['add']('hidden'),stopAudio(),document['getElementById']('lead-name')['innerText']='Đang\x20tìm\x20số...',document['getElementById']('lead-phone')['innerText']='-----------';const E=await apiRequest({'action':'get_lead','username':state['user'],'token':state['token'],'carrier':state['carrier']});isProcessing=![];if(E&&E['count_nong']!==undefined)document['getElementById']('display-count')['innerText']=E['count_nong']+'/10';if(!E||!E['success']){document['getElementById']('lead-name')['innerText']=E&&E['limit_reached']?'HOÀN\x20TẤT\x20CHỈ\x20TIÊU':'HẾT\x20SỐ',document['getElementById']('lead-phone')['innerText']='-----------',alert(E?E['message']:'Không\x20lấy\x20được\x20số'),state['currentLead']=null,document['getElementById']('btn-retry')['classList']['remove']('hidden');return;}state['currentLead']=E;let W=E['sdt'];if(W&&!W['startsWith']('0'))W='0'+W;document['getElementById']('lead-name')['innerText']=E['ten'],document['getElementById']('lead-phone')['innerText']=W,document['getElementById']('btn-call')['href']='tel:'+W,document['getElementById']('action-box-positive')['classList']['add']('box-glow'),document['getElementById']('text-nhac-nho')['classList']['remove']('hidden');if(state['audioList']&&state['audioList']['length']>0x0){const U=Math['floor'](Math['random']()*state['audioList']['length']);state['audio']['src']=state['audioList'][U],state['audio']['load']();}}function playAudio(){if(state['audioList']&&state['audioList']['length']>0x0)state['audio']['play']();else alert('⚠️\x20Chưa\x20cấu\x20hình\x20kịch\x20bản\x20âm\x20thanh!');}function stopAudio(){state['audio']['pause'](),state['audio']['currentTime']=0x0;}function exportVCard(E,W){const U=new Date(),N='QT_'+E+'_'+String(U['getMonth']()+0x1)['padStart'](0x2,'0')+String(U['getDate']())['padStart'](0x2,'0');let T=W;if(T&&!T['startsWith']('0'))T='0'+T;const y=new Blob(['BEGIN:VCARD\x0aVERSION:3.0\x0aFN:'+N+'\x0aTEL;TYPE=CELL:'+T+'\x0aEND:VCARD'],{'type':'text/vcard;charset=utf-8;'}),g=URL['createObjectURL'](y),Q=document['createElement']('a');Q['href']=g,Q['download']=N+'.vcf',document['body']['appendChild'](Q),Q['click'](),document['body']['removeChild'](Q),URL['revokeObjectURL'](g);}function submitStatus(E){if(!state['currentLead']||isProcessing)return;if(E==='nong'){document['getElementById']('title-modal-nong')['innerText']='🔥\x20NHẬP\x20INFO\x20KHÁCH\x20NÓNG',document['getElementById']('modal-nong')['classList']['remove']('hidden'),document['getElementById']('input-taichinh')['focus']();return;}executeSaveStatus(E,'','','','');}function closeModalNong(){document['getElementById']('modal-nong')['classList']['add']('hidden'),document['getElementById']('input-taichinh')['value']='',document['getElementById']('input-ngayhen')['value']='',document['getElementById']('input-ghichu')['value']='',document['getElementById']('input-chotgap')['value']='',state['isEditing']=![],state['editSdt']=null;}async function confirmHotLead(){if(isProcessing)return;const E=document['getElementById']('input-taichinh')['value'],W=document['getElementById']('input-ngayhen')['value'],U=document['getElementById']('input-ghichu')['value'],N=document['getElementById']('input-chotgap')['value'];closeModalNong();if(state['isEditing']){isProcessing=!![];const T=await apiRequest({'action':'edit_hot_lead','username':state['user'],'token':state['token'],'sdt':state['editSdt'],'tai_chinh':E,'ngay_hen':W,'ghi_chu':U,'chot_gap':N});state['isEditing']=![],state['editSdt']=null,isProcessing=![];T&&T['success']?(loadHotLeadsList(),alert('✅\x20Đã\x20lưu\x20cập\x20nhật\x20thông\x20tin\x20thành\x20công!')):alert('❌\x20Lỗi:\x20'+(T?T['message']:'Không\x20thể\x20cập\x20nhật.'));return;}if(!state['currentLead'])return;exportVCard(state['currentLead']['ten'],state['currentLead']['sdt']),executeSaveStatus('nong',E,W,U,N);}async function executeSaveStatus(E,W,U,N,T){isProcessing=!![],stopAudio(),document['getElementById']('action-box-positive')['classList']['remove']('box-glow'),document['getElementById']('text-nhac-nho')['classList']['add']('hidden');const y=state['currentLead'];state['currentLead']=null,document['getElementById']('lead-name')['innerText']='Đang\x20lưu...',await apiRequest({'action':'update_lead','username':state['user'],'token':state['token'],'row_index':y['row_index'],'status':E,'tai_chinh':W,'ngay_hen':U,'ghi_chu':N,'chot_gap':T});if(E==='nong')loadHotLeadsList();isProcessing=![],fetchNextLead();}window['addEventListener']('keydown',E=>{const W=document['getElementById']('modal-nong');if(!W['classList']['contains']('hidden')){if(E['key']==='Enter')E['preventDefault'](),confirmHotLead();else{if(E['key']==='Escape')closeModalNong();}return;}const U=document['getElementById']('modal-chitiet');if(!U['classList']['contains']('hidden')){if(E['key']==='Escape'||E['key']==='Enter')closeModalChiTiet();return;}if(document['getElementById']('view-call')['classList']['contains']('hidden')||!state['currentLead'])return;if(E['code']==='Space')E['preventDefault'](),stopAudio();else{if(E['key']==='1')submitStatus('nong');else{if(E['key']==='2')submitStatus('am');else{if(E['key']==='3')submitStatus('ko');else{if(E['key']==='4')submitStatus('cam');}}}}});
+  </script>
+</body>
+</html>
